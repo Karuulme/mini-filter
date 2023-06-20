@@ -1,34 +1,95 @@
-;
-; mini-filter.inf
-;
+;;;
+;;; mini-filter
+;;;
+;;;
+;;; Copyright (c) 1999 - 2002, Microsoft Corporation
+;;;
 
 [Version]
-Signature="$WINDOWS NT$"
-Class=System
-ClassGuid={4d36e97d-e325-11ce-bfc1-08002be10318}
-Provider=%ManufacturerName%
-DriverVer=
-CatalogFile=mini-filter.cat
-PnpLockdown=1
+Signature   = "$Windows NT$"
+Class       = "ActivityMonitor"             ;This is determined by the work this filter driver does
+ClassGuid   = {b86dff51-a31e-4bac-b3cf-e8cfe75c9fc2}    ;This value is determined by the Class
+Provider    = %ProviderString%
+DriverVer   = 06/16/2007,1.0.0.0
+CatalogFile = mini-filter.cat
 
-;This template is supported for OS version 17763 (Windows 10 version 1809) and after.
-;For Windows OS prior to Windows 10 1809 set DefaultDestDir = 12
+
 [DestinationDirs]
-DefaultDestDir = 13
+DefaultDestDir          = 12
+mini-filter.DriverFiles  = 12            ;%windir%\system32\drivers
 
+;;
+;; Default install sections
+;;
 
-[SourceDisksNames]
-1 = %DiskName%,,,""
+[DefaultInstall]
+OptionDesc  = %ServiceDescription%
+CopyFiles   = mini-filter.DriverFiles
+
+[DefaultInstall.Services]
+AddService  = %ServiceName%,,mini-filter.Service
+
+;;
+;; Default uninstall sections
+;;
+
+[DefaultUninstall]
+DelFiles   = mini-filter.DriverFiles
+
+[DefaultUninstall.Services]
+DelService = %ServiceName%,0x200      ;Ensure service is stopped before deleting
+
+;
+; Services Section
+;
+
+[mini-filter.Service]
+DisplayName      = %ServiceName%
+Description      = %ServiceDescription%
+ServiceBinary    = %12%\%DriverName%.sys    ;%windir%\system32\drivers\
+Dependencies     = "FltMgr"
+ServiceType      = 2                        ;SERVICE_FILE_SYSTEM_DRIVER
+StartType        = 3                        ;SERVICE_DEMAND_START
+ErrorControl     = 1                        ;SERVICE_ERROR_NORMAL
+LoadOrderGroup   = "mini-filter Activity Monitor"
+AddReg           = mini-filter.AddRegistry
+
+;
+; Registry Modifications
+;
+
+[mini-filter.AddRegistry]
+HKR,,"SupportedFeatures",0x00010001,0x3
+HKR,"Instances","DefaultInstance",0x00000000,%DefaultInstance%
+HKR,"Instances\"%Instance1.Name%,"Altitude",0x00000000,%Instance1.Altitude%
+HKR,"Instances\"%Instance1.Name%,"Flags",0x00010001,%Instance1.Flags%
+
+;
+; Copy Files
+;
+
+[mini-filter.DriverFiles]
+%DriverName%.sys
 
 [SourceDisksFiles]
+mini-filter.sys = 1,,
 
+[SourceDisksNames]
+1 = %DiskId1%,,,
 
-[Manufacturer]
-%ManufacturerName%=Standard,NT$ARCH$
-
-[Standard.NT$ARCH$]
-
+;;
+;; String Section
+;;
 
 [Strings]
-ManufacturerName="<Your manufacturer name>" ;TODO: Replace with your manufacturer name
-DiskName="mini-filter Source Disk"
+ProviderString          = "TODO-Set-Provider"
+ServiceDescription      = "  mini-filter driver"
+ServiceName             = "mini-filter"
+DriverName              = "mini-filter"
+DiskId1                 = "mini-filter Device Installation Disk"
+
+;Instances specific information.
+DefaultInstance         = "Null Instance"
+Instance1.Name          = "Null Instance"
+Instance1.Altitude      = "370020"
+Instance1.Flags         = 0x1          ; Suppress automatic attachments
